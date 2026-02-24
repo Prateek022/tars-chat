@@ -23,28 +23,16 @@ function formatMessageTime(timestamp: number) {
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const isThisYear = date.getFullYear() === now.getFullYear();
-
   if (isToday) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   } else if (isThisYear) {
-    return `${date.toLocaleDateString([], {
-      month: "short",
-      day: "numeric",
-    })} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   } else {
-    return `${date.toLocaleDateString([], {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return `${date.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
 }
 
-export default function ChatWindow({
-  conversationId,
-  currentUser,
-  onBack,
-}: Props) {
+export default function ChatWindow({ conversationId, currentUser, onBack }: Props) {
   const [message, setMessage] = useState("");
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showNewMessages, setShowNewMessages] = useState(false);
@@ -68,9 +56,7 @@ export default function ChatWindow({
   const clearTyping = useMutation(api.typing.clearTyping);
   const markAsRead = useMutation(api.messages.markAsRead);
 
-  const otherUser =
-    conversationData?.otherUser ??
-    messages?.find((m) => m.senderId !== currentUser._id)?.sender;
+  const otherUser = conversationData?.otherUser ?? messages?.find((m) => m.senderId !== currentUser._id)?.sender;
 
   useEffect(() => {
     if (isAtBottom) {
@@ -132,13 +118,9 @@ export default function ChatWindow({
 
       {/* Header */}
       <div className="flex items-center gap-4 px-6 py-4 border-b border-slate-800 bg-slate-900 flex-shrink-0">
-        <button
-          onClick={onBack}
-          className="md:hidden text-slate-400 hover:text-white p-1"
-        >
+        <button onClick={onBack} className="md:hidden text-slate-400 hover:text-white p-1">
           <ArrowLeft className="h-6 w-6" />
         </button>
-
         {otherUser ? (
           <>
             <div className="relative">
@@ -148,17 +130,11 @@ export default function ChatWindow({
                   {otherUser.name[0]}
                 </AvatarFallback>
               </Avatar>
-              <span
-                className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-900 ${
-                  otherUser.isOnline ? "bg-green-500" : "bg-slate-500"
-                }`}
-              />
+              <span className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-900 ${otherUser.isOnline ? "bg-green-500" : "bg-slate-500"}`} />
             </div>
             <div>
               <p className="text-white font-semibold text-lg">{otherUser.name}</p>
-              <p className="text-sm text-slate-400">
-                {otherUser.isOnline ? "🟢 Online" : "⚫ Offline"}
-              </p>
+              <p className="text-sm text-slate-400">{otherUser.isOnline ? "🟢 Online" : "⚫ Offline"}</p>
             </div>
           </>
         ) : (
@@ -173,23 +149,21 @@ export default function ChatWindow({
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto px-6 py-6 space-y-6"
+        className="relative flex-1 overflow-y-auto px-4 py-4"
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
       >
         {messages === undefined ? (
-          <div className="space-y-6">
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`flex ${i % 2 === 0 ? "justify-end" : ""} animate-pulse`}
-              >
-                <div className="h-12 bg-slate-800 rounded-2xl w-56" />
+              <div key={i} style={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-end" : "flex-start" }}>
+                <div style={{ height: "48px", background: "#1e293b", borderRadius: "16px", width: "200px" }} />
               </div>
             ))}
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400">
-            <div className="text-6xl mb-4">👋</div>
-            <p className="text-base">No messages yet. Say hello!</p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, color: "#94a3b8" }}>
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>👋</div>
+            <p>No messages yet. Say hello!</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -197,11 +171,16 @@ export default function ChatWindow({
             return (
               <div
                 key={msg._id}
-                className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: "8px",
+                  justifyContent: isMe ? "flex-end" : "flex-start",
+                }}
               >
                 {/* Avatar for received messages */}
                 {!isMe && (
-                  <Avatar className="h-8 w-8 flex-shrink-0 mb-1">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={msg.sender?.imageUrl} />
                     <AvatarFallback className="bg-slate-600 text-white text-xs">
                       {msg.sender?.name[0]}
@@ -209,32 +188,41 @@ export default function ChatWindow({
                   </Avatar>
                 )}
 
-                {/* Message bubble */}
-                <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[60%]`}>
+                {/* Bubble + timestamp */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", maxWidth: "60%" }}>
                   <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm ${
-                      isMe
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-slate-700 text-white rounded-bl-none"
-                    }`}
-                    style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "18px",
+                      borderBottomRightRadius: isMe ? "4px" : "18px",
+                      borderBottomLeftRadius: isMe ? "18px" : "4px",
+                      background: isMe ? "#2563eb" : "#334155",
+                      color: "white",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                      whiteSpace: "pre-wrap",
+                    }}
                   >
                     {msg.isDeleted ? (
-                      <span className="italic text-slate-300 text-xs">
+                      <span style={{ fontStyle: "italic", color: "#94a3b8", fontSize: "13px" }}>
                         This message was deleted
                       </span>
                     ) : (
                       msg.content
                     )}
                   </div>
-                  <div className={`flex items-center gap-2 mt-1 ${isMe ? "flex-row-reverse" : ""}`}>
-                    <span className="text-slate-500 text-xs">
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px", flexDirection: isMe ? "row-reverse" : "row" }}>
+                    <span style={{ color: "#64748b", fontSize: "11px" }}>
                       {formatMessageTime(msg.createdAt)}
                     </span>
                     {isMe && !msg.isDeleted && (
                       <button
                         onClick={() => deleteMessage({ messageId: msg._id })}
-                        className="text-slate-600 hover:text-red-400 text-xs transition-colors"
+                        style={{ color: "#475569", fontSize: "11px", background: "none", border: "none", cursor: "pointer" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}
                       >
                         Delete
                       </button>
@@ -244,20 +232,22 @@ export default function ChatWindow({
               </div>
             );
           })
+        )}
+
         {/* Typing indicator */}
         {typingUsers && typingUsers.length > 0 && (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Avatar className="h-8 w-8">
               <AvatarImage src={typingUsers[0]?.imageUrl} />
-              <AvatarFallback className="bg-slate-600 text-white">
+              <AvatarFallback className="bg-slate-600 text-white text-xs">
                 {typingUsers[0]?.name[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="bg-slate-800 px-5 py-3 rounded-2xl rounded-bl-sm">
-              <div className="flex gap-1.5 items-center">
-                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div style={{ background: "#334155", padding: "10px 16px", borderRadius: "18px", borderBottomLeftRadius: "4px" }}>
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -269,16 +259,32 @@ export default function ChatWindow({
         {showNewMessages && (
           <button
             onClick={scrollToBottom}
-            className="sticky bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm flex items-center gap-2 shadow-lg hover:bg-blue-700 transition-colors mx-auto"
+            style={{
+              position: "sticky",
+              bottom: "16px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "#2563eb",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "999px",
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              border: "none",
+              cursor: "pointer",
+              margin: "0 auto",
+            }}
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown size={16} />
             New messages
           </button>
         )}
       </div>
 
       {/* Message input */}
-      <div className="px-6 py-4 border-t border-slate-800 bg-slate-900 flex-shrink-0">
+      <div className="px-4 py-4 border-t border-slate-800 bg-slate-900 flex-shrink-0">
         <div className="flex gap-3 items-center">
           <input
             type="text"
@@ -286,7 +292,7 @@ export default function ChatWindow({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 bg-slate-800 border border-slate-700 text-white placeholder:text-slate-400 rounded-2xl px-5 py-3.5 outline-none focus:border-blue-500 transition-colors text-sm"
+            className="flex-1 bg-slate-800 border border-slate-700 text-white placeholder:text-slate-400 rounded-2xl px-5 py-3 outline-none focus:border-blue-500 transition-colors text-sm"
           />
           <Button
             onClick={handleSend}
