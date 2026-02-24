@@ -200,8 +200,8 @@ export default function ChatWindow({
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`flex gap-3 max-w-[70%] min-w-0 ${
-                    isMe ? "flex-row-reverse" : ""
+                  className={`flex gap-3 w-full max-w-[70%] ${
+                    isMe ? "flex-row-reverse ml-auto" : "mr-auto"
                   }`}
                 >
                   {!isMe && (
@@ -212,9 +212,9 @@ export default function ChatWindow({
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div
-                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed break-words overflow-hidden ${
                         isMe
                           ? "bg-blue-600 text-white rounded-br-sm"
                           : "bg-slate-800 text-white rounded-bl-sm"
@@ -225,7 +225,7 @@ export default function ChatWindow({
                           This message was deleted
                         </p>
                       ) : (
-                        <p>{msg.content}</p>
+                        <p className="break-all">{msg.content}</p>
                       )}
                     </div>
                     <div
