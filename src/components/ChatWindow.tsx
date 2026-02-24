@@ -200,7 +200,7 @@ export default function ChatWindow({
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`flex gap-3 max-w-[65%] ${
+                  className={`flex gap-3 max-w-[70%] min-w-0 ${
                     isMe ? "flex-row-reverse" : ""
                   }`}
                 >
@@ -214,7 +214,7 @@ export default function ChatWindow({
                   )}
                   <div>
                     <div
-                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${
+                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap ${
                         isMe
                           ? "bg-blue-600 text-white rounded-br-sm"
                           : "bg-slate-800 text-white rounded-bl-sm"
