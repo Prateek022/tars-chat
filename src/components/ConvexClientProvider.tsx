@@ -4,8 +4,13 @@ import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 
-// Create a Convex client using our URL from .env.local
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+
+if (!convexUrl) {
+  throw new Error("NEXT_PUBLIC_CONVEX_URL is not set");
+}
+
+const convex = new ConvexReactClient(convexUrl);
 
 export default function ConvexClientProvider({
   children,
