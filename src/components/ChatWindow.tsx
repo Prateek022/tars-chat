@@ -5,7 +5,6 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, ChevronDown } from "lucide-react";
 
@@ -19,7 +18,6 @@ type Props = {
   onBack: () => void;
 };
 
-// Format message timestamp
 function formatMessageTime(timestamp: number) {
   const date = new Date(timestamp);
   const now = new Date();
@@ -52,8 +50,13 @@ export default function ChatWindow({
   const [showNewMessages, setShowNewMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const typingTimeout = useRef<NodeJS.Timeout>();
 
   const messages = useQuery(api.messages.getMessages, { conversationId });
+  const conversationData = useQuery(api.conversations.getConversationWithUser, {
+    conversationId,
+    currentUserId: currentUser._id,
+  });
   const typingUsers = useQuery(api.typing.getTypingUsers, {
     conversationId,
     currentUserId: currentUser._id,
@@ -65,12 +68,10 @@ export default function ChatWindow({
   const clearTyping = useMutation(api.typing.clearTyping);
   const markAsRead = useMutation(api.messages.markAsRead);
 
-  // Get the other user info from messages
-  const otherUser = messages?.find(
-    (m) => m.senderId !== currentUser._id
-  )?.sender;
+  const otherUser =
+    conversationData?.otherUser ??
+    messages?.find((m) => m.senderId !== currentUser._id)?.sender;
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     if (isAtBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,12 +81,10 @@ export default function ChatWindow({
     }
   }, [messages, isAtBottom]);
 
-  // Mark as read when conversation opens
   useEffect(() => {
     markAsRead({ conversationId, userId: currentUser._id });
   }, [conversationId, currentUser._id, markAsRead]);
 
-  // Track if user is at bottom of scroll
   const handleScroll = () => {
     const el = scrollAreaRef.current;
     if (!el) return;
@@ -100,8 +99,6 @@ export default function ChatWindow({
     setShowNewMessages(false);
   };
 
-  // Handle typing indicator
-  const typingTimeout = useRef<NodeJS.Timeout>();
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     setTyping({ conversationId, userId: currentUser._id });
@@ -131,39 +128,44 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-slate-950">
+    <div className="flex flex-col flex-1 h-full bg-slate-950">
+
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-800 bg-slate-900">
-        {/* Back button - only on mobile */}
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-slate-800 bg-slate-900 flex-shrink-0">
         <button
           onClick={onBack}
-          className="md:hidden text-slate-400 hover:text-white"
+          className="md:hidden text-slate-400 hover:text-white p-1"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-6 w-6" />
         </button>
 
         {otherUser ? (
           <>
             <div className="relative">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-12 w-12">
                 <AvatarImage src={otherUser.imageUrl} />
-                <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
+                <AvatarFallback className="bg-slate-600 text-white text-lg">
+                  {otherUser.name[0]}
+                </AvatarFallback>
               </Avatar>
               <span
-                className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-slate-900 ${
+                className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-900 ${
                   otherUser.isOnline ? "bg-green-500" : "bg-slate-500"
                 }`}
               />
             </div>
             <div>
-              <p className="text-white font-medium">{otherUser.name}</p>
-              <p className="text-xs text-slate-400">
-                {otherUser.isOnline ? "Online" : "Offline"}
+              <p className="text-white font-semibold text-lg">{otherUser.name}</p>
+              <p className="text-sm text-slate-400">
+                {otherUser.isOnline ? "🟢 Online" : "⚫ Offline"}
               </p>
             </div>
           </>
         ) : (
-          <p className="text-white font-medium">Chat</p>
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-slate-700 animate-pulse" />
+            <div className="h-5 w-32 bg-slate-700 rounded animate-pulse" />
+          </div>
         )}
       </div>
 
@@ -171,25 +173,23 @@ export default function ChatWindow({
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="relative flex-1 overflow-y-auto px-6 py-6 space-y-6"
       >
         {messages === undefined ? (
-          // Loading state
-          <div className="space-y-4">
+          <div className="space-y-6">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className={`flex ${i % 2 === 0 ? "justify-end" : ""} animate-pulse`}
               >
-                <div className="h-10 bg-slate-800 rounded-2xl w-48" />
+                <div className="h-12 bg-slate-800 rounded-2xl w-56" />
               </div>
             ))}
           </div>
         ) : messages.length === 0 ? (
-          // Empty state
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
-            <div className="text-5xl mb-3">👋</div>
-            <p className="text-sm">No messages yet. Say hello!</p>
+            <div className="text-6xl mb-4">👋</div>
+            <p className="text-base">No messages yet. Say hello!</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -199,37 +199,48 @@ export default function ChatWindow({
                 key={msg._id}
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
-                <div className={`flex gap-2 max-w-[70%] ${isMe ? "flex-row-reverse" : ""}`}>
+                <div
+                  className={`flex gap-3 max-w-[65%] ${
+                    isMe ? "flex-row-reverse" : ""
+                  }`}
+                >
                   {!isMe && (
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-9 w-9 flex-shrink-0 mt-1">
                       <AvatarImage src={msg.sender?.imageUrl} />
-                      <AvatarFallback>{msg.sender?.name[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-slate-600 text-white">
+                        {msg.sender?.name[0]}
+                      </AvatarFallback>
                     </Avatar>
                   )}
                   <div>
                     <div
-                      className={`px-4 py-2 rounded-2xl ${
+                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${
                         isMe
                           ? "bg-blue-600 text-white rounded-br-sm"
                           : "bg-slate-800 text-white rounded-bl-sm"
                       }`}
                     >
                       {msg.isDeleted ? (
-                        <p className="italic text-slate-400 text-sm">
+                        <p className="italic text-slate-400">
                           This message was deleted
                         </p>
                       ) : (
-                        <p className="text-sm">{msg.content}</p>
+                        <p>{msg.content}</p>
                       )}
                     </div>
-                    <div className={`flex items-center gap-2 mt-1 ${isMe ? "justify-end" : ""}`}>
+                    <div
+                      className={`flex items-center gap-3 mt-1.5 ${
+                        isMe ? "justify-end" : ""
+                      }`}
+                    >
                       <p className="text-slate-500 text-xs">
                         {formatMessageTime(msg.createdAt)}
                       </p>
-                      {/* Delete button - only for own messages */}
                       {isMe && !msg.isDeleted && (
                         <button
-                          onClick={() => deleteMessage({ messageId: msg._id })}
+                          onClick={() =>
+                            deleteMessage({ messageId: msg._id })
+                          }
                           className="text-slate-600 hover:text-red-400 text-xs transition-colors"
                         >
                           Delete
@@ -245,51 +256,54 @@ export default function ChatWindow({
 
         {/* Typing indicator */}
         {typingUsers && typingUsers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
               <AvatarImage src={typingUsers[0]?.imageUrl} />
-              <AvatarFallback>{typingUsers[0]?.name[0]}</AvatarFallback>
+              <AvatarFallback className="bg-slate-600 text-white">
+                {typingUsers[0]?.name[0]}
+              </AvatarFallback>
             </Avatar>
-            <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-bl-sm">
-              <div className="flex gap-1">
-                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-slate-800 px-5 py-3 rounded-2xl rounded-bl-sm">
+              <div className="flex gap-1.5 items-center">
+                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="h-2.5 w-2.5 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
         )}
 
         <div ref={messagesEndRef} />
+
+        {/* New messages button */}
+        {showNewMessages && (
+          <button
+            onClick={scrollToBottom}
+            className="sticky bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm flex items-center gap-2 shadow-lg hover:bg-blue-700 transition-colors mx-auto"
+          >
+            <ChevronDown className="h-4 w-4" />
+            New messages
+          </button>
+        )}
       </div>
 
-      {/* New messages button */}
-      {showNewMessages && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          <ChevronDown className="h-4 w-4" />
-          New messages
-        </button>
-      )}
-
       {/* Message input */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900">
-        <div className="flex gap-2">
-          <Input
+      <div className="px-6 py-4 border-t border-slate-800 bg-slate-900 flex-shrink-0">
+        <div className="flex gap-3 items-center">
+          <input
+            type="text"
             value={message}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+            className="flex-1 bg-slate-800 border border-slate-700 text-white placeholder:text-slate-400 rounded-2xl px-5 py-3.5 outline-none focus:border-blue-500 transition-colors text-sm"
           />
           <Button
             onClick={handleSend}
             disabled={!message.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl h-12 w-12 p-0 flex items-center justify-center flex-shrink-0"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           </Button>
         </div>
       </div>

@@ -76,3 +76,22 @@ export const getUserConversations = query({
     return result.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
   },
 });
+// Get a single conversation with other user's info
+export const getConversationWithUser = query({
+  args: {
+    conversationId: v.id("conversations"),
+    currentUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return null;
+
+    const otherUserId = conversation.participants.find(
+      (p) => p !== args.currentUserId
+    );
+    if (!otherUserId) return null;
+
+    const otherUser = await ctx.db.get(otherUserId);
+    return { ...conversation, otherUser };
+  },
+});
