@@ -10,30 +10,40 @@ export default function PresenceManager() {
   const setUserOnline = useMutation(api.users.setUserOnline);
   const setUserOffline = useMutation(api.users.setUserOffline);
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const isOnlineRef = useRef(false);
 
   useEffect(() => {
     if (!isSignedIn || !user) return;
 
-    // Set online immediately
-    setUserOnline({ clerkId: user.id });
-
-    // Keep pinging online every 30 seconds
-    intervalRef.current = setInterval(() => {
+    const goOnline = () => {
+      isOnlineRef.current = true;
       setUserOnline({ clerkId: user.id });
-    }, 30000);
+    };
 
-    // Set offline when tab is hidden or closed
+    const goOffline = () => {
+      isOnlineRef.current = false;
+      setUserOffline({ clerkId: user.id });
+    };
+
+    // Set online immediately
+    goOnline();
+
+    // Ping every 10 seconds to stay online
+    intervalRef.current = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        goOnline();
+      }
+    }, 10000);
+
     const handleVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        setUserOffline({ clerkId: user.id });
+      if (document.visibilityState === "visible") {
+        goOnline();
       } else {
-        setUserOnline({ clerkId: user.id });
+        goOffline();
       }
     };
 
-    const handleUnload = () => {
-      setUserOffline({ clerkId: user.id });
-    };
+    const handleUnload = () => goOffline();
 
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("beforeunload", handleUnload);
@@ -42,6 +52,7 @@ export default function PresenceManager() {
       clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("beforeunload", handleUnload);
+      goOffline();
     };
   }, [isSignedIn, user, setUserOnline, setUserOffline]);
 
