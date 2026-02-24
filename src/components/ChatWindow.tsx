@@ -197,63 +197,53 @@ export default function ChatWindow({
             return (
               <div
                 key={msg._id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`flex gap-3 w-full max-w-[70%] ${
-                    isMe ? "flex-row-reverse ml-auto" : "mr-auto"
-                  }`}
-                >
-                  {!isMe && (
-                    <Avatar className="h-9 w-9 flex-shrink-0 mt-1">
-                      <AvatarImage src={msg.sender?.imageUrl} />
-                      <AvatarFallback className="bg-slate-600 text-white">
-                        {msg.sender?.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={`px-5 py-3 rounded-2xl text-sm leading-relaxed break-words overflow-hidden ${
-                        isMe
-                          ? "bg-blue-600 text-white rounded-br-sm"
-                          : "bg-slate-800 text-white rounded-bl-sm"
-                      }`}
-                    >
-                      {msg.isDeleted ? (
-                        <p className="italic text-slate-400">
-                          This message was deleted
-                        </p>
-                      ) : (
-                        <p className="break-all">{msg.content}</p>
-                      )}
-                    </div>
-                    <div
-                      className={`flex items-center gap-3 mt-1.5 ${
-                        isMe ? "justify-end" : ""
-                      }`}
-                    >
-                      <p className="text-slate-500 text-xs">
-                        {formatMessageTime(msg.createdAt)}
-                      </p>
-                      {isMe && !msg.isDeleted && (
-                        <button
-                          onClick={() =>
-                            deleteMessage({ messageId: msg._id })
-                          }
-                          className="text-slate-600 hover:text-red-400 text-xs transition-colors"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
+                {/* Avatar for received messages */}
+                {!isMe && (
+                  <Avatar className="h-8 w-8 flex-shrink-0 mb-1">
+                    <AvatarImage src={msg.sender?.imageUrl} />
+                    <AvatarFallback className="bg-slate-600 text-white text-xs">
+                      {msg.sender?.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+
+                {/* Message bubble */}
+                <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[60%]`}>
+                  <div
+                    className={`px-4 py-2.5 rounded-2xl text-sm ${
+                      isMe
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-slate-700 text-white rounded-bl-none"
+                    }`}
+                    style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+                  >
+                    {msg.isDeleted ? (
+                      <span className="italic text-slate-300 text-xs">
+                        This message was deleted
+                      </span>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                  <div className={`flex items-center gap-2 mt-1 ${isMe ? "flex-row-reverse" : ""}`}>
+                    <span className="text-slate-500 text-xs">
+                      {formatMessageTime(msg.createdAt)}
+                    </span>
+                    {isMe && !msg.isDeleted && (
+                      <button
+                        onClick={() => deleteMessage({ messageId: msg._id })}
+                        className="text-slate-600 hover:text-red-400 text-xs transition-colors"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })
-        )}
-
         {/* Typing indicator */}
         {typingUsers && typingUsers.length > 0 && (
           <div className="flex items-center gap-3">
