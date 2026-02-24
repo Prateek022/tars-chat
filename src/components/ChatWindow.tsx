@@ -50,7 +50,7 @@ export default function ChatWindow({
   const [showNewMessages, setShowNewMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const typingTimeout = useRef<NodeJS.Timeout>();
+  const typingTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const messages = useQuery(api.messages.getMessages, { conversationId });
   const conversationData = useQuery(api.conversations.getConversationWithUser, {
